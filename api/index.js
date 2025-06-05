@@ -1,53 +1,45 @@
+let data = [
+  { id: '1', nama: 'Ahmad', waktu: 1741247092, lokasi: 'Pandaan' },
+  { id: '2', nama: 'Budi', waktu: 1741246092, lokasi: 'Sukorejo' },
+];
+
 export default {
-  async fetch(request, env, ctx) {
-    const { method } = request;
+  async fetch(request) {
     const url = new URL(request.url);
+    const path = url.pathname;
+    const method = request.method;
 
-    if (url.pathname === "/api/absen") {
-      if (method === "GET") {
-        // Contoh data absensi
-        const data = [
-          {
-            id: '1',
-            nama: 'Ahmad',
-            waktu: 1741247092,
-            lokasi: 'Pandaan',
-          },
-          {
-            id: '2',
-            nama: 'Budi',
-            waktu: 1741246092,
-            lokasi: 'Sukorejo',
-          },
-        ];
-        return new Response(JSON.stringify(data), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
+    // GET all
+    if (path === "/api/absen" && method === "GET") {
+      return Response.json(data);
+    }
 
-      if (method === "POST") {
-        const body = await request.json();
-        const { nama, waktu, lokasi } = body;
+    // CREATE
+    if (path === "/api/absen" && method === "POST") {
+      const body = await request.json();
+      const newAbsen = {
+        id: Date.now().toString(),
+        nama: body.nama,
+        lokasi: body.lokasi,
+        waktu: body.waktu
+      };
+      data.push(newAbsen);
+      return Response.json({ message: "Ditambahkan", data: newAbsen }, { status: 201 });
+    }
 
-        // Di sini Anda bisa tambahkan logika simpan ke KV, database, dsb.
-        // Untuk sementara, kita anggap berhasil ditambahkan.
-        const newAbsen = {
-          id: String(Date.now()),
-          nama,
-          waktu,
-          lokasi,
-        };
+    // UPDATE
+    if (path.startsWith("/api/absen/") && method === "PUT") {
+      const id = path.split("/").pop();
+      const body = await request.json();
+      data = data.map(item => item.id === id ? { ...item, ...body } : item);
+      return Response.json({ message: "Diperbarui" });
+    }
 
-        return new Response(JSON.stringify({
-          message: "Absensi berhasil dicatat.",
-          data: newAbsen,
-        }), {
-          headers: { 'Content-Type': 'application/json' },
-          status: 201,
-        });
-      }
-
-      return new Response("Method Not Allowed", { status: 405 });
+    // DELETE
+    if (path.startsWith("/api/absen/") && method === "DELETE") {
+      const id = path.split("/").pop();
+      data = data.filter(item => item.id !== id);
+      return Response.json({ message: "Dihapus" });
     }
 
     return new Response("Not Found", { status: 404 });
