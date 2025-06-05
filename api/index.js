@@ -1,8 +1,12 @@
-export default function handler(req, res) {
-  const url = new URL(req.url, `http://${req.headers.host}`); // URL needs base in Node.js
+addEventListener("fetch", event => {
+  event.respondWith(handleRequest(event.request));
+});
+
+function handleRequest(request) {
+  const url = new URL(request.url);
 
   if (url.pathname.startsWith("/api/aplikasiabsenfina")) {
-    return res.status(200).json([
+    return new Response(JSON.stringify([
       {
         id: '1',
         name: "event 1",
@@ -21,8 +25,12 @@ export default function handler(req, res) {
         place: "purwosari",
         time: 1741245092,
       },
-    ]);
+    ]), {
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
   }
 
-  res.status(404).json({ error: "Not found" });
+  return new Response("Not found", { status: 404 });
 }
