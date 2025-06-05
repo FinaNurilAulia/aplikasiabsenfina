@@ -21,3 +21,8 @@ This template should help get you started developing with Vue 3 in Vite.
 4. tambahkan remote github.
 5. publish/push/sync ke github
 
+#### setting cloudflare
+1. install wrangler dan cloudflare/vite-plugin dengn menjalankan 'npm install -o @cloudflare/vite-plugin wrangler' di terminal.
+2. setting cloudflare di 'vite.cofig.js'.
+3. buat dan setting 'wrangler.jsonc'
+4. buat file 'index.js' di folder api untuk backend.
