@@ -15,6 +15,9 @@ This template should help get you started developing with Vue 3 in Vite.
 4. jalankan project dengan menjalankan npe run dev' di terminal.
 
 #### setting github di vscode
-1. buat repository di github dengan nama repo web125c".
+1. buat repository di github dengan nama 'aplikasiabsenfina'.
 2. masuk ke menu source controle di github dan pilih "initialize repository.
 3. masukkan "README.md ke stage dan commit
+4. tambahkan remote github.
+5. publish/push/sync ke github
+
