@@ -1,71 +1,79 @@
+// server.js - Backend API untuk Aplikasi Absensi
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const PORT = 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Data storage (gunakan database dalam produksi)
+// Database simulasi (dalam aplikasi nyata gunakan database seperti MongoDB/MySQL)
 let mahasiswa = [
-  { id: 1, nim: '12345', nama: 'Ahmad Sholeh', prodi: 'Teknik Informatika' },
-  { id: 2, nim: '12346', nama: 'Sari Wulandari', prodi: 'Sistem Informasi' },
-  { id: 3, nim: '12347', nama: 'Budi Santoso', prodi: 'Teknik Informatika' }
+  { id: 1, nim: '2023001', nama: 'Ahmad Rizki', kelas: 'TI-3A', email: 'ahmad@email.com' },
+  { id: 2, nim: '2023002', nama: 'Siti Nurhaliza', kelas: 'TI-3A', email: 'siti@email.com' },
+  { id: 3, nim: '2023003', nama: 'Budi Santoso', kelas: 'TI-3B', email: 'budi@email.com' }
 ];
 
 let absensi = [
   { 
     id: 1, 
-    mahasiswaId: 1, 
-    tanggal: '2025-06-05', 
-    waktu: '08:00', 
-    status: 'hadir',
-    matakuliah: 'Pemrograman Web'
+    mahasiswa_id: 1, 
+    tanggal: '2024-12-01', 
+    waktu: '08:30:00', 
+    status: 'Hadir',
+    mata_kuliah: 'Pemrograman Web'
   },
   { 
     id: 2, 
-    mahasiswaId: 2, 
-    tanggal: '2025-06-05', 
-    waktu: '08:15', 
-    status: 'hadir',
-    matakuliah: 'Pemrograman Web'
+    mahasiswa_id: 2, 
+    tanggal: '2024-12-01', 
+    waktu: '08:35:00', 
+    status: 'Hadir',
+    mata_kuliah: 'Pemrograman Web'
   }
 ];
 
 let nextMahasiswaId = 4;
 let nextAbsensiId = 3;
 
-// Routes untuk Mahasiswa
-// GET - Ambil semua mahasiswa
+// === ROUTES MAHASISWA ===
+
+// GET - Semua mahasiswa
 app.get('/api/mahasiswa', (req, res) => {
-  res.json(mahasiswa);
+  res.json({
+    success: true,
+    data: mahasiswa
+  });
 });
 
-// GET - Ambil mahasiswa berdasarkan ID
+// GET - Mahasiswa by ID
 app.get('/api/mahasiswa/:id', (req, res) => {
   const mhs = mahasiswa.find(m => m.id === parseInt(req.params.id));
-  if (!mhs) return res.status(404).json({ error: 'Mahasiswa tidak ditemukan' });
-  res.json(mhs);
+  if (!mhs) {
+    return res.status(404).json({ success: false, message: 'Mahasiswa tidak ditemukan' });
+  }
+  res.json({ success: true, data: mhs });
 });
 
-// POST - Tambah mahasiswa baru
+// POST - Tambah mahasiswa
 app.post('/api/mahasiswa', (req, res) => {
-  const { nim, nama, prodi } = req.body;
+  const { nim, nama, kelas, email } = req.body;
   
-  if (!nim || !nama || !prodi) {
-    return res.status(400).json({ error: 'NIM, nama, dan prodi harus diisi' });
+  // Validasi NIM duplikat
+  if (mahasiswa.find(m => m.nim === nim)) {
+    return res.status(400).json({ success: false, message: 'NIM sudah terdaftar' });
   }
 
   const newMahasiswa = {
     id: nextMahasiswaId++,
     nim,
     nama,
-    prodi
+    kelas,
+    email
   };
 
   mahasiswa.push(newMahasiswa);
-  res.status(201).json(newMahasiswa);
+  res.status(201).json({ success: true, data: newMahasiswa });
 });
 
 // PUT - Update mahasiswa
@@ -74,13 +82,19 @@ app.put('/api/mahasiswa/:id', (req, res) => {
   const index = mahasiswa.findIndex(m => m.id === id);
   
   if (index === -1) {
-    return res.status(404).json({ error: 'Mahasiswa tidak ditemukan' });
+    return res.status(404).json({ success: false, message: 'Mahasiswa tidak ditemukan' });
   }
 
-  const { nim, nama, prodi } = req.body;
-  mahasiswa[index] = { ...mahasiswa[index], nim, nama, prodi };
+  const { nim, nama, kelas, email } = req.body;
   
-  res.json(mahasiswa[index]);
+  // Validasi NIM duplikat (kecuali untuk mahasiswa yang sedang diupdate)
+  const nimExists = mahasiswa.find(m => m.nim === nim && m.id !== id);
+  if (nimExists) {
+    return res.status(400).json({ success: false, message: 'NIM sudah terdaftar' });
+  }
+
+  mahasiswa[index] = { id, nim, nama, kelas, email };
+  res.json({ success: true, data: mahasiswa[index] });
 });
 
 // DELETE - Hapus mahasiswa
@@ -89,100 +103,98 @@ app.delete('/api/mahasiswa/:id', (req, res) => {
   const index = mahasiswa.findIndex(m => m.id === id);
   
   if (index === -1) {
-    return res.status(404).json({ error: 'Mahasiswa tidak ditemukan' });
+    return res.status(404).json({ success: false, message: 'Mahasiswa tidak ditemukan' });
   }
 
-  mahasiswa.splice(index, 1);
-  // Hapus juga absensi mahasiswa tersebut
-  absensi = absensi.filter(a => a.mahasiswaId !== id);
+  // Hapus absensi terkait
+  absensi = absensi.filter(a => a.mahasiswa_id !== id);
   
-  res.json({ message: 'Mahasiswa berhasil dihapus' });
+  mahasiswa.splice(index, 1);
+  res.json({ success: true, message: 'Mahasiswa berhasil dihapus' });
 });
 
-// Routes untuk Absensi
-// GET - Ambil semua absensi dengan detail mahasiswa
+// === ROUTES ABSENSI ===
+
+// GET - Semua absensi dengan data mahasiswa
 app.get('/api/absensi', (req, res) => {
-  const absensiWithDetails = absensi.map(abs => {
-    const mhs = mahasiswa.find(m => m.id === abs.mahasiswaId);
+  const absensiWithMahasiswa = absensi.map(abs => {
+    const mhs = mahasiswa.find(m => m.id === abs.mahasiswa_id);
     return {
       ...abs,
-      mahasiswa: mhs
+      mahasiswa: mhs || null
     };
   });
-  res.json(absensiWithDetails);
+
+  res.json({
+    success: true,
+    data: absensiWithMahasiswa
+  });
 });
 
-// GET - Ambil absensi berdasarkan tanggal
+// GET - Absensi by tanggal
 app.get('/api/absensi/tanggal/:tanggal', (req, res) => {
   const tanggal = req.params.tanggal;
-  const absensiByDate = absensi
-    .filter(a => a.tanggal === tanggal)
-    .map(abs => {
-      const mhs = mahasiswa.find(m => m.id === abs.mahasiswaId);
-      return {
-        ...abs,
-        mahasiswa: mhs
-      };
-    });
-  res.json(absensiByDate);
+  const absensiHari = absensi.filter(abs => abs.tanggal === tanggal);
+  
+  const absensiWithMahasiswa = absensiHari.map(abs => {
+    const mhs = mahasiswa.find(m => m.id === abs.mahasiswa_id);
+    return {
+      ...abs,
+      mahasiswa: mhs || null
+    };
+  });
+
+  res.json({
+    success: true,
+    data: absensiWithMahasiswa
+  });
 });
 
-// POST - Tambah absensi baru
+// POST - Tambah absensi (check-in)
 app.post('/api/absensi', (req, res) => {
-  const { mahasiswaId, tanggal, waktu, status, matakuliah } = req.body;
+  const { mahasiswa_id, mata_kuliah } = req.body;
   
-  if (!mahasiswaId || !tanggal || !waktu || !status || !matakuliah) {
-    return res.status(400).json({ error: 'Semua field harus diisi' });
+  // Cek apakah mahasiswa ada
+  const mhs = mahasiswa.find(m => m.id === mahasiswa_id);
+  if (!mhs) {
+    return res.status(404).json({ success: false, message: 'Mahasiswa tidak ditemukan' });
   }
 
-  // Cek apakah mahasiswa sudah absen hari ini untuk mata kuliah yang sama
-  const existingAbsensi = absensi.find(a => 
-    a.mahasiswaId === mahasiswaId && 
-    a.tanggal === tanggal && 
-    a.matakuliah === matakuliah
+  const today = new Date().toISOString().split('T')[0];
+  const now = new Date().toTimeString().split(' ')[0];
+
+  // Cek apakah sudah absen hari ini untuk mata kuliah yang sama
+  const sudahAbsen = absensi.find(abs => 
+    abs.mahasiswa_id === mahasiswa_id && 
+    abs.tanggal === today && 
+    abs.mata_kuliah === mata_kuliah
   );
 
-  if (existingAbsensi) {
-    return res.status(400).json({ error: 'Mahasiswa sudah melakukan absensi untuk mata kuliah ini hari ini' });
+  if (sudahAbsen) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Mahasiswa sudah melakukan absensi untuk mata kuliah ini hari ini' 
+    });
   }
 
   const newAbsensi = {
     id: nextAbsensiId++,
-    mahasiswaId,
-    tanggal,
-    waktu,
-    status,
-    matakuliah
+    mahasiswa_id,
+    tanggal: today,
+    waktu: now,
+    status: 'Hadir',
+    mata_kuliah
   };
 
   absensi.push(newAbsensi);
   
-  // Return dengan detail mahasiswa
-  const mhs = mahasiswa.find(m => m.id === mahasiswaId);
-  res.status(201).json({
+  // Return dengan data mahasiswa
+  const absensiWithMahasiswa = {
     ...newAbsensi,
     mahasiswa: mhs
-  });
-});
+  };
 
-// PUT - Update absensi
-app.put('/api/absensi/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  const index = absensi.findIndex(a => a.id === id);
-  
-  if (index === -1) {
-    return res.status(404).json({ error: 'Absensi tidak ditemukan' });
-  }
-
-  const { mahasiswaId, tanggal, waktu, status, matakuliah } = req.body;
-  absensi[index] = { ...absensi[index], mahasiswaId, tanggal, waktu, status, matakuliah };
-  
-  // Return dengan detail mahasiswa
-  const mhs = mahasiswa.find(m => m.id === mahasiswaId);
-  res.json({
-    ...absensi[index],
-    mahasiswa: mhs
-  });
+  res.status(201).json({ success: true, data: absensiWithMahasiswa });
 });
 
 // DELETE - Hapus absensi
@@ -191,23 +203,54 @@ app.delete('/api/absensi/:id', (req, res) => {
   const index = absensi.findIndex(a => a.id === id);
   
   if (index === -1) {
-    return res.status(404).json({ error: 'Absensi tidak ditemukan' });
+    return res.status(404).json({ success: false, message: 'Data absensi tidak ditemukan' });
   }
 
   absensi.splice(index, 1);
-  res.json({ message: 'Absensi berhasil dihapus' });
+  res.json({ success: true, message: 'Data absensi berhasil dihapus' });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server berjalan di http://localhost:${PORT}`);
-  console.log('API Endpoints:');
-  console.log('- GET /api/mahasiswa - Ambil semua mahasiswa');
-  console.log('- POST /api/mahasiswa - Tambah mahasiswa');
-  console.log('- PUT /api/mahasiswa/:id - Update mahasiswa');
-  console.log('- DELETE /api/mahasiswa/:id - Hapus mahasiswa');
-  console.log('- GET /api/absensi - Ambil semua absensi');
-  console.log('- POST /api/absensi - Tambah absensi');
-  console.log('- PUT /api/absensi/:id - Update absensi');
-  console.log('- DELETE /api/absensi/:id - Hapus absensi');
+// === DASHBOARD STATS ===
+app.get('/api/dashboard/stats', (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  const absensiHariIni = absensi.filter(abs => abs.tanggal === today);
+  
+  res.json({
+    success: true,
+    data: {
+      total_mahasiswa: mahasiswa.length,
+      hadir_hari_ini: absensiHariIni.length,
+      total_absensi: absensi.length,
+      persentase_kehadiran: mahasiswa.length > 0 ? 
+        Math.round((absensiHariIni.length / mahasiswa.length) * 100) : 0
+    }
+  });
 });
+
+// Error handling
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ success: false, message: 'Terjadi kesalahan server' });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: 'Endpoint tidak ditemukan' });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server berjalan di port ${PORT}`);
+  console.log(`📚 API Documentation:`);
+  console.log(`   GET    /api/mahasiswa           - Lihat semua mahasiswa`);
+  console.log(`   POST   /api/mahasiswa           - Tambah mahasiswa baru`);
+  console.log(`   PUT    /api/mahasiswa/:id       - Update mahasiswa`);
+  console.log(`   DELETE /api/mahasiswa/:id       - Hapus mahasiswa`);
+  console.log(`   GET    /api/absensi             - Lihat semua absensi`);
+  console.log(`   POST   /api/absensi             - Check-in absensi`);
+  console.log(`   GET    /api/absensi/tanggal/:tanggal - Absensi per tanggal`);
+  console.log(`   GET    /api/dashboard/stats     - Dashboard statistik`);
+});
+
+// Export untuk testing
+module.exports = app;
