@@ -1,509 +1,716 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Absensi Mahasiswa</title>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .header h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 2.5rem;
-        }
-
-        .header p {
-            color: #666;
-            font-size: 1.1rem;
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            justify-content: center;
-        }
-
-        .nav-tab {
-            padding: 12px 24px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .nav-tab:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .nav-tab.active {
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .stat-card:nth-child(2) {
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
-        }
-
-        .stat-card:nth-child(3) {
-            background: linear-gradient(135deg, #45b7d1, #96c93d);
-        }
-
-        .stat-card:nth-child(4) {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e1e8ed;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #4ecdc4, #44a08d);
-            color: white;
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-            color: white;
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, #feca57, #ff9ff3);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        .table th, .table td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-
-        .table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .table tbody tr:hover {
-            background: #f8f9fa;
-        }
-
-        .badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .badge-success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .alert {
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border-left: 4px solid;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            border-color: #28a745;
-            color: #155724;
-        }
-
-        .alert-danger {
-            background: #f8d7da;
-            border-color: #dc3545;
-            color: #721c24;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .nav-tabs {
-                flex-wrap: wrap;
-            }
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
-    </style>
-</head>
-<body>
-    <div id="app">
-        <div class="container">
-            <div class="header">
-                <h1><i class="fas fa-graduation-cap"></i> Sistem Absensi Mahasiswa</h1>
-                <p>Platform digital untuk manajemen kehadiran mahasiswa</p>
+<template>
+  <div id="app" class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-indigo-500">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-6">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <h1 class="text-3xl font-bold text-gray-900">
+                📚 <span class="text-indigo-600">Sistem Absensi</span>
+              </h1>
             </div>
+          </div>
+          <div v-if="isLoggedIn" class="flex items-center space-x-4">
+            <span class="text-gray-700">Halo, <strong>{{ currentUser.nama }}</strong></span>
+            <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
+              {{ currentUser.role === 'dosen' ? '👨‍🏫 Dosen' : '👨‍🎓 Mahasiswa' }}
+            </span>
+            <button 
+              @click="logout" 
+              class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
 
-            <!-- Navigation Tabs -->
-            <div class="nav-tabs">
-                <button class="nav-tab" :class="{ active: activeTab === 'dashboard' }" @click="activeTab = 'dashboard'">
-                    <i class="fas fa-chart-line"></i> Dashboard
-                </button>
-                <button class="nav-tab" :class="{ active: activeTab === 'absensi' }" @click="activeTab = 'absensi'">
-                    <i class="fas fa-clipboard-check"></i> Absensi
-                </button>
-                <button class="nav-tab" :class="{ active: activeTab === 'mahasiswa' }" @click="activeTab = 'mahasiswa'">
-                    <i class="fas fa-users"></i> Data Mahasiswa
-                </button>
+    <!-- Login Form -->
+    <div v-if="!isLoggedIn" class="flex items-center justify-center min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-md w-full space-y-8">
+        <div>
+          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Masuk ke Sistem Absensi
+          </h2>
+          <p class="mt-2 text-center text-sm text-gray-600">
+            Silakan pilih peran Anda untuk melanjutkan
+          </p>
+        </div>
+        <form class="mt-8 space-y-6" @submit.prevent="login">
+          <div class="rounded-md shadow-sm space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Nama</label>
+              <input
+                v-model="loginForm.nama"
+                type="text"
+                required
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Masukkan nama Anda"
+              />
             </div>
-
-            <!-- Dashboard Tab -->
-            <div v-if="activeTab === 'dashboard'">
-                <!-- Statistics Cards -->
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-number">{{ stats.total_mahasiswa }}</div>
-                        <div class="stat-label">Total Mahasiswa</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">{{ stats.hadir_hari_ini }}</div>
-                        <div class="stat-label">Hadir Hari Ini</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">{{ stats.total_absensi }}</div>
-                        <div class="stat-label">Total Absensi</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number">{{ stats.persentase_kehadiran }}%</div>
-                        <div class="stat-label">Persentase Kehadiran</div>
-                    </div>
-                </div>
-
-                <!-- Absensi Hari Ini -->
-                <div class="card">
-                    <h3><i class="fas fa-calendar-day"></i> Absensi Hari Ini</h3>
-                    <div v-if="absensiHariIni.length === 0" class="empty-state">
-                        <i class="fas fa-calendar-times fa-3x"></i>
-                        <p>Belum ada mahasiswa yang absen hari ini</p>
-                    </div>
-                    <table v-else class="table">
-                        <thead>
-                            <tr>
-                                <th>NIM</th>
-                                <th>Nama</th>
-                                <th>Kelas</th>
-                                <th>Mata Kuliah</th>
-                                <th>Waktu</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="abs in absensiHariIni" :key="abs.id">
-                                <td>{{ abs.mahasiswa?.nim }}</td>
-                                <td>{{ abs.mahasiswa?.nama }}</td>
-                                <td>{{ abs.mahasiswa?.kelas }}</td>
-                                <td>{{ abs.mata_kuliah }}</td>
-                                <td>{{ abs.waktu }}</td>
-                                <td><span class="badge badge-success">{{ abs.status }}</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Role</label>
+              <select
+                v-model="loginForm.role"
+                required
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">Pilih Role</option>
+                <option value="mahasiswa">Mahasiswa</option>
+                <option value="dosen">Dosen</option>
+              </select>
             </div>
-
-            <!-- Absensi Tab -->
-            <div v-if="activeTab === 'absensi'">
-                <!-- Form Check-in -->
-                <div class="card">
-                    <h3><i class="fas fa-sign-in-alt"></i> Check-in Absensi</h3>
-                    
-                    <div v-if="message" class="alert" :class="messageType === 'success' ? 'alert-success' : 'alert-danger'">
-                        {{ message }}
-                    </div>
-
-                    <form @submit.prevent="checkIn">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Pilih Mahasiswa</label>
-                                <select v-model="absensiForm.mahasiswa_id" class="form-control" required>
-                                    <option value="">-- Pilih Mahasiswa --</option>
-                                    <option v-for="mhs in mahasiswaList" :key="mhs.id" :value="mhs.id">
-                                        {{ mhs.nim }} - {{ mhs.nama }} ({{ mhs.kelas }})
-                                    </option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Mata Kuliah</label>
-                                <select v-model="absensiForm.mata_kuliah" class="form-control" required>
-                                    <option value="">-- Pilih Mata Kuliah --</option>
-                                    <option value="Pemrograman Web">Pemrograman Web</option>
-                                    <option value="Database">Database</option>
-                                    <option value="Algoritma">Algoritma</option>
-                                    <option value="Jaringan Komputer">Jaringan Komputer</option>
-                                    <option value="Sistem Operasi">Sistem Operasi</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-success" :disabled="loading">
-                            <i class="fas fa-check"></i>
-                            {{ loading ? 'Processing...' : 'Check-in Absensi' }}
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Riwayat Absensi -->
-                <div class="card">
-                    <h3><i class="fas fa-history"></i> Riwayat Absensi</h3>
-                    <div v-if="absensiList.length === 0" class="empty-state">
-                        <i class="fas fa-clipboard-list fa-3x"></i>
-                        <p>Belum ada data absensi</p>
-                    </div>
-                    <table v-else class="table">
-                        <thead>
-                            <tr>
-                                <th>Tanggal</th>
-                                <th>NIM</th>
-                                <th>Nama</th>
-                                <th>Kelas</th>
-                                <th>Mata Kuliah</th>
-                                <th>Waktu</th>
-                                <th>Status</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="abs in absensiList" :key="abs.id">
-                                <td>{{ formatDate(abs.tanggal) }}</td>
-                                <td>{{ abs.mahasiswa?.nim }}</td>
-                                <td>{{ abs.mahasiswa?.nama }}</td>
-                                <td>{{ abs.mahasiswa?.kelas }}</td>
-                                <td>{{ abs.mata_kuliah }}</td>
-                                <td>{{ abs.waktu }}</td>
-                                <td><span class="badge badge-success">{{ abs.status }}</span></td>
-                                <td>
-                                    <button @click="deleteAbsensi(abs.id)" class="btn btn-danger" style="padding: 8px 12px;">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div v-if="loginForm.role === 'mahasiswa'">
+              <label class="block text-sm font-medium text-gray-700">NIM</label>
+              <input
+                v-model="loginForm.nim"
+                type="text"
+                required
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Masukkan NIM Anda"
+              />
             </div>
+          </div>
+          <div>
+            <button
+              type="submit"
+              class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Masuk
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
-            <!-- Mahasiswa Tab -->
-            <div v-if="activeTab === 'mahasiswa'">
-                <!-- Form Mahasiswa -->
-                <div class="card">
-                    <h3><i class="fas fa-user-plus"></i> {{ editMode ? 'Edit' : 'Tambah' }} Mahasiswa</h3>
-                    
-                    <div v-if="message" class="alert" :class="messageType === 'success' ? 'alert-success' : 'alert-danger'">
-                        {{ message }}
-                    </div>
+    <!-- Main Content -->
+    <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Navigation Tabs -->
+      <div class="mb-8">
+        <nav class="flex space-x-8">
+          <a
+            v-for="tab in availableTabs"
+            :key="tab.id"
+            @click="activeTab = tab.id"
+            :class="[
+              'py-2 px-1 border-b-2 font-medium text-sm cursor-pointer transition-colors',
+              activeTab === tab.id
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            ]"
+          >
+            {{ tab.name }}
+          </a>
+        </nav>
+      </div>
 
-                    <form @submit.prevent="saveMahasiswa">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>NIM</label>
-                                <input type="text" v-model="mahasiswaForm.nim" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Nama Lengkap</label>
-                                <input type="text" v-model="mahasiswaForm.nama" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Kelas</label>
-                                <select v-model="mahasiswaForm.kelas" class="form-control" required>
-                                    <option value="">-- Pilih Kelas --</option>
-                                    <option value="TI-3A">TI-3A</option>
-                                    <option value="TI-3B">TI-3B</option>
-                                    <option value="TI-3C">TI-3C</option>
-                                    <option value="SI-3A">SI-3A</option>
-                                    <option value="SI-3B">SI-3B</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Email</label>
-                                <input type="email" v-model="mahasiswaForm.email" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="action-buttons">
-                            <button type="submit" class="btn btn-primary" :disabled="loading">
-                                <i class="fas fa-save"></i>
-                                {{ loading ? 'Menyimpan...' : (editMode ? 'Update' : 'Simpan') }}
-                            </button>
-                            <button v-if="editMode" type="button" @click="cancelEdit" class="btn btn-warning">
-                                <i class="fas fa-times"></i> Batal
-                            </button>
-                        </div>
-                    </form>
-                </div>
+      <!-- Absensi Form (Mahasiswa) -->
+      <div v-if="activeTab === 'absensi' && currentUser.role === 'mahasiswa'" class="bg-white shadow-lg rounded-lg p-6 mb-8">
+        <h3 class="text-xl font-bold text-gray-900 mb-6">📝 Form Absensi</h3>
+        <form @submit.prevent="submitAbsensi" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Nama</label>
+              <input
+                v-model="absensiForm.nama"
+                type="text"
+                readonly
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">NIM</label>
+              <input
+                v-model="absensiForm.nim"
+                type="text"
+                readonly
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+              />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Keterangan</label>
+            <select
+              v-model="absensiForm.keterangan"
+              required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">Pilih Keterangan</option>
+              <option value="hadir">✅ Hadir</option>
+              <option value="izin">📝 Izin</option>
+              <option value="sakit">🏥 Sakit</option>
+              <option value="alpa">❌ Alpa</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            :disabled="isSubmitting"
+            class="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white py-2 px-4 rounded-md font-medium transition-colors"
+          >
+            {{ isSubmitting ? 'Menyimpan...' : 'Submit Absensi' }}
+          </button>
+        </form>
+      </div>
 
-                <!-- Daftar Mahasiswa -->
-                <div class="card">
-                    <h3><i class="fas fa-list"></i> Daftar Mahasiswa</h3>
-                    <div v-if="mahasiswaList.length === 0" class="empty-state">
-                        <i class="fas fa-users fa-3x"></i>
-                        <p>Belum ada data mahasiswa</p>
-                    </div>
-                    <table v-else class="table">
-                        <thead>
-                            <tr>
-                                <th>NIM</th>
-                                <th>Nama</th>
-                                <th>Kelas</th>
-                                <th>Email</th>
-                                <th>Aksi</th>
-                            </tr>
-                        </thead>
+      <!-- Data Absensi -->
+      <div v-if="activeTab === 'data'" class="bg-white shadow-lg rounded-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-gray-900">📊 Data Absensi</h3>
+          <button
+            @click="fetchAbsensiData"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+          >
+            🔄 Refresh Data
+          </button>
+        </div>
+
+        <!-- Filter dan Search -->
+        <div class="mb-6 flex flex-col sm:flex-row gap-4">
+          <div class="flex-1">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari berdasarkan nama atau NIM..."
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          <div>
+            <select
+              v-model="filterKeterangan"
+              class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">Semua Status</option>
+              <option value="hadir">Hadir</option>
+              <option value="izin">Izin</option>
+              <option value="sakit">Sakit</option>
+              <option value="alpa">Alpa</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tabel Data -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nama
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  NIM
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Keterangan
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Waktu
+                </th>
+                <th v-if="currentUser.role === 'dosen'" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="item in filteredAbsensiData" :key="item.id" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900">{{ item.nama }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">{{ item.nim }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span :class="getStatusClass(item.keterangan)" class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full">
+                    {{ getStatusText(item.keterangan) }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {{ formatDateTime(item.waktu) }}
+                </td>
+                <td v-if="currentUser.role === 'dosen'" class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                  <button
+                    @click="editAbsensi(item)"
+                    class="text-indigo-600 hover:text-indigo-900"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    @click="deleteAbsensi(item.id)"
+                    class="text-red-600 hover:text-red-900"
+                  >
+                    🗑️ Hapus
+                  </button>
+                </td>
+              </tr>
+              <tr v-if="filteredAbsensiData.length === 0">
+                <td :colspan="currentUser.role === 'dosen' ? 5 : 4" class="px-6 py-4 text-center text-gray-500">
+                  Tidak ada data absensi
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Statistik (Dosen) -->
+      <div v-if="activeTab === 'statistik' && currentUser.role === 'dosen'" class="bg-white shadow-lg rounded-lg p-6">
+        <h3 class="text-xl font-bold text-gray-900 mb-6">📈 Statistik Absensi</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="bg-green-50 p-4 rounded-lg">
+            <div class="flex items-center">
+              <div class="text-green-600 text-2xl mr-3">✅</div>
+              <div>
+                <p class="text-sm font-medium text-green-600">Hadir</p>
+                <p class="text-2xl font-bold text-green-900">{{ getStatusCount('hadir') }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-blue-50 p-4 rounded-lg">
+            <div class="flex items-center">
+              <div class="text-blue-600 text-2xl mr-3">📝</div>
+              <div>
+                <p class="text-sm font-medium text-blue-600">Izin</p>
+                <p class="text-2xl font-bold text-blue-900">{{ getStatusCount('izin') }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-yellow-50 p-4 rounded-lg">
+            <div class="flex items-center">
+              <div class="text-yellow-600 text-2xl mr-3">🏥</div>
+              <div>
+                <p class="text-sm font-medium text-yellow-600">Sakit</p>
+                <p class="text-2xl font-bold text-yellow-900">{{ getStatusCount('sakit') }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-red-50 p-4 rounded-lg">
+            <div class="flex items-center">
+              <div class="text-red-600 text-2xl mr-3">❌</div>
+              <div>
+                <p class="text-sm font-medium text-red-600">Alpa</p>
+                <p class="text-2xl font-bold text-red-900">{{ getStatusCount('alpa') }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div v-if="showEditModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 class="text-lg font-bold mb-4">Edit Absensi</h3>
+        <form @submit.prevent="updateAbsensi">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Nama</label>
+              <input
+                v-model="editForm.nama"
+                type="text"
+                readonly
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">NIM</label>
+              <input
+                v-model="editForm.nim"
+                type="text"
+                readonly
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Keterangan</label>
+              <select
+                v-model="editForm.keterangan"
+                required
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="hadir">✅ Hadir</option>
+                <option value="izin">📝 Izin</option>
+                <option value="sakit">🏥 Sakit</option>
+                <option value="alpa">❌ Alpa</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex justify-end space-x-2 mt-6">
+            <button
+              type="button"
+              @click="showEditModal = false"
+              class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+            >
+              Simpan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Notification -->
+    <div v-if="notification.show" 
+         :class="[
+           'fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all duration-300',
+           notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+         ]"
+    >
+      {{ notification.message }}
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'App',
+  data() {
+    return {
+      isLoggedIn: false,
+      currentUser: null,
+      activeTab: 'absensi',
+      
+      // Login form
+      loginForm: {
+        nama: '',
+        role: '',
+        nim: ''
+      },
+      
+      // Absensi form
+      absensiForm: {
+        nama: '',
+        nim: '',
+        keterangan: ''
+      },
+      
+      // Edit form
+      editForm: {
+        id: null,
+        nama: '',
+        nim: '',
+        keterangan: ''
+      },
+      
+      // Data
+      absensiData: [],
+      
+      // UI State
+      isSubmitting: false,
+      showEditModal: false,
+      searchQuery: '',
+      filterKeterangan: '',
+      
+      // Notification
+      notification: {
+        show: false,
+        message: '',
+        type: 'success'
+      }
+    }
+  },
+  
+  computed: {
+    availableTabs() {
+      const tabs = [
+        { id: 'data', name: '📊 Data Absensi' }
+      ];
+      
+      if (this.currentUser?.role === 'mahasiswa') {
+        tabs.unshift({ id: 'absensi', name: '📝 Form Absensi' });
+      }
+      
+      if (this.currentUser?.role === 'dosen') {
+        tabs.push({ id: 'statistik', name: '📈 Statistik' });
+      }
+      
+      return tabs;
+    },
+    
+    filteredAbsensiData() {
+      let filtered = this.absensiData;
+      
+      // Search filter
+      if (this.searchQuery) {
+        filtered = filtered.filter(item => 
+          item.nama.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+          item.nim.toLowerCase().includes(this.searchQuery.toLowerCase())
+        );
+      }
+      
+      // Status filter
+      if (this.filterKeterangan) {
+        filtered = filtered.filter(item => item.keterangan === this.filterKeterangan);
+      }
+      
+      return filtered;
+    }
+  },
+  
+  methods: {
+    login() {
+      if (!this.loginForm.nama || !this.loginForm.role) {
+        this.showNotification('Harap lengkapi semua field', 'error');
+        return;
+      }
+      
+      if (this.loginForm.role === 'mahasiswa' && !this.loginForm.nim) {
+        this.showNotification('NIM harus diisi untuk mahasiswa', 'error');
+        return;
+      }
+      
+      this.currentUser = {
+        nama: this.loginForm.nama,
+        role: this.loginForm.role,
+        nim: this.loginForm.nim
+      };
+      
+      this.isLoggedIn = true;
+      
+      // Set form absensi untuk mahasiswa
+      if (this.currentUser.role === 'mahasiswa') {
+        this.absensiForm.nama = this.currentUser.nama;
+        this.absensiForm.nim = this.currentUser.nim;
+        this.activeTab = 'absensi';
+      } else {
+        this.activeTab = 'data';
+      }
+      
+      this.fetchAbsensiData();
+      this.showNotification('Login berhasil!', 'success');
+    },
+    
+    logout() {
+      this.isLoggedIn = false;
+      this.currentUser = null;
+      this.activeTab = 'absensi';
+      this.loginForm = { nama: '', role: '', nim: '' };
+      this.absensiForm = { nama: '', nim: '', keterangan: '' };
+      this.absensiData = [];
+    },
+    
+    async submitAbsensi() {
+      if (!this.absensiForm.keterangan) {
+        this.showNotification('Pilih keterangan absensi', 'error');
+        return;
+      }
+      
+      this.isSubmitting = true;
+      
+      try {
+        // Simulasi tanpa API call - langsung tambah ke data lokal
+        const newAbsensi = {
+          id: Date.now(),
+          nama: this.absensiForm.nama,
+          nim: this.absensiForm.nim,
+          keterangan: this.absensiForm.keterangan,
+          waktu: new Date().toISOString()
+        };
+        
+        this.absensiData.unshift(newAbsensi);
+        this.showNotification('Absensi berhasil disimpan!', 'success');
+        this.absensiForm.keterangan = '';
+      } catch (error) {
+        this.showNotification('Terjadi kesalahan saat menyimpan', 'error');
+      } finally {
+        this.isSubmitting = false;
+      }
+    },
+    
+    fetchAbsensiData() {
+      // Inisialisasi data dummy - tidak menggunakan API call
+      if (this.absensiData.length === 0) {
+        this.absensiData = [
+          {
+            id: 1,
+            nama: 'John Doe',
+            nim: '123456789',
+            keterangan: 'hadir',
+            waktu: new Date().toISOString()
+          },
+          {
+            id: 2,
+            nama: 'Jane Smith',
+            nim: '987654321',
+            keterangan: 'izin',
+            waktu: new Date(Date.now() - 86400000).toISOString()
+          },
+          {
+            id: 3,
+            nama: 'Bob Johnson',
+            nim: '456789123',
+            keterangan: 'sakit',
+            waktu: new Date(Date.now() - 172800000).toISOString()
+          },
+          {
+            id: 4,
+            nama: 'Alice Brown',
+            nim: '321654987',
+            keterangan: 'alpa',
+            waktu: new Date(Date.now() - 259200000).toISOString()
+          }
+        ];
+      }
+    },
+    
+    editAbsensi(item) {
+      this.editForm = { ...item };
+      this.showEditModal = true;
+    },
+    
+    async updateAbsensi() {
+      try {
+        // Update data lokal tanpa API call
+        const index = this.absensiData.findIndex(item => item.id === this.editForm.id);
+        if (index !== -1) {
+          this.absensiData[index] = { ...this.editForm };
+          this.showNotification('Data berhasil diupdate!', 'success');
+          this.showEditModal = false;
+        } else {
+          this.showNotification('Data tidak ditemukan', 'error');
+        }
+      } catch (error) {
+        this.showNotification('Terjadi kesalahan saat mengupdate', 'error');
+      }
+    },
+    
+    async deleteAbsensi(id) {
+      if (!confirm('Yakin ingin menghapus data ini?')) return;
+      
+      try {
+        // Hapus dari data lokal tanpa API call
+        const index = this.absensiData.findIndex(item => item.id === id);
+        if (index !== -1) {
+          this.absensiData.splice(index, 1);
+          this.showNotification('Data berhasil dihapus!', 'success');
+        } else {
+          this.showNotification('Data tidak ditemukan', 'error');
+        }
+      } catch (error) {
+        this.showNotification('Terjadi kesalahan saat menghapus', 'error');
+      }
+    },
+    
+    // Mock API call untuk simulasi
+    async mockApiCall(url, method, data = null) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          if (method === 'GET') {
+            resolve({
+              success: true,
+              data: [
+                {
+                  id: 1,
+                  nama: 'John Doe',
+                  nim: '123456789',
+                  keterangan: 'hadir',
+                  waktu: new Date().toISOString()
+                },
+                {
+                  id: 2,
+                  nama: 'Jane Smith',
+                  nim: '987654321',
+                  keterangan: 'izin',
+                  waktu: new Date(Date.now() - 86400000).toISOString()
+                },
+                {
+                  id: 3,
+                  nama: 'Bob Johnson',
+                  nim: '456789123',
+                  keterangan: 'sakit',
+                  waktu: new Date(Date.now() - 172800000).toISOString()
+                }
+              ]
+            });
+          } else if (method === 'POST') {
+            resolve({
+              success: true,
+              message: 'Absensi berhasil disimpan',
+              data: {
+                id: Date.now(),
+                ...data,
+                waktu: new Date().toISOString()
+              }
+            });
+          } else if (method === 'PUT') {
+            resolve({
+              success: true,
+              message: 'Data berhasil diupdate'
+            });
+          } else if (method === 'DELETE') {
+            resolve({
+              success: true,
+              message: 'Data berhasil dihapus'
+            });
+          }
+        }, 1000);
+      });
+    },
+    
+    getStatusClass(status) {
+      const classes = {
+        'hadir': 'bg-green-100 text-green-800',
+        'izin': 'bg-blue-100 text-blue-800',
+        'sakit': 'bg-yellow-100 text-yellow-800',
+        'alpa': 'bg-red-100 text-red-800'
+      };
+      return classes[status] || 'bg-gray-100 text-gray-800';
+    },
+    
+    getStatusText(status) {
+      const texts = {
+        'hadir': '✅ Hadir',
+        'izin': '📝 Izin',
+        'sakit': '🏥 Sakit',
+        'alpa': '❌ Alpa'
+      };
+      return texts[status] || status;
+    },
+    
+    getStatusCount(status) {
+      return this.absensiData.filter(item => item.keterangan === status).length;
+    },
+    
+    formatDateTime(dateTime) {
+      return new Date(dateTime).toLocaleString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    },
+    
+    showNotification(message, type = 'success') {
+      this.notification = {
+        show: true,
+        message,
+        type
+      };
+      
+      setTimeout(() => {
+        this.notification.show = false;
+      }, 3000);
+    }
+  }
+}
+</script>
+
+<style>
+#app {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.transition-colors {
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.transition-all {
+  transition: all 0.3s ease-in-out;
+}
+</style>
