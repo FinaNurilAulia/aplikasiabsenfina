@@ -2,7 +2,7 @@
   <div class="app">
     <!-- Login -->
     <div v-if="!user" class="login-card">
-      <h2>📝 Aplikasi Absensi</h2>
+      <h2>📝 Absensi</h2>
       <form @submit.prevent="login">
         <select v-model="loginRole" required>
           <option disabled value="">Pilih Sebagai</option>
