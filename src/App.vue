@@ -1,41 +1,43 @@
 <template>
   <div class="app">
-    <!-- Login Form -->
-    <div v-if="!user">
-      <h2>Login</h2>
+    <!-- Login -->
+    <div v-if="!user" class="login-card">
+      <h2>📝 Aplikasi Absensi</h2>
       <form @submit.prevent="login">
         <select v-model="loginRole" required>
-          <option disabled value="">Pilih Peran</option>
+          <option disabled value="">Pilih Sebagai</option>
           <option value="mahasiswa">Mahasiswa</option>
           <option value="dosen">Dosen</option>
         </select>
-        <input v-model="loginName" placeholder="Nama" required />
-        <button type="submit">Login</button>
+        <input v-model="loginName" placeholder="Nama Lengkap" required />
+        <button type="submit">Masuk</button>
       </form>
     </div>
 
-    <!-- App Content -->
-    <div v-else>
-      <h2>Selamat Datang, {{ user.nama }} ({{ user.role }})</h2>
-      <button @click="logout">Logout</button>
+    <!-- Main App -->
+    <div v-else class="dashboard">
+      <div class="navbar">
+        <span>👤 {{ user.nama }} ({{ user.role }})</span>
+        <button @click="logout">Keluar</button>
+      </div>
 
-      <div v-if="user.role === 'mahasiswa'">
-        <h3>Isi Absensi</h3>
+      <!-- Mahasiswa -->
+      <div v-if="user.role === 'mahasiswa'" class="card">
+        <h3>📌 Isi Absensi</h3>
         <form @submit.prevent="submitAbsensi">
           <select v-model="absenForm.kehadiran">
             <option>Hadir</option>
             <option>Tidak Hadir</option>
           </select>
-          <button type="submit">{{ isEdit ? 'Update' : 'Absen' }}</button>
+          <button type="submit">{{ isEdit ? 'Update' : 'Absen Sekarang' }}</button>
           <button v-if="isEdit" @click="cancelEdit" type="button">Batal</button>
         </form>
 
-        <h3>Riwayat Absensi Saya</h3>
+        <h3>📋 Riwayat Absensi Saya</h3>
         <table>
           <thead>
             <tr>
               <th>No</th>
-              <th>Nama</th>
               <th>Kehadiran</th>
               <th>Aksi</th>
             </tr>
@@ -43,19 +45,19 @@
           <tbody>
             <tr v-for="(a, i) in absensiSaya" :key="a.id">
               <td>{{ i + 1 }}</td>
-              <td>{{ a.nama }}</td>
               <td>{{ a.kehadiran }}</td>
               <td>
-                <button @click="editAbsensi(a)">Edit</button>
-                <button @click="hapusAbsensi(a.id)">Hapus</button>
+                <button @click="editAbsensi(a)">✏️</button>
+                <button @click="hapusAbsensi(a.id)">🗑️</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div v-if="user.role === 'dosen'">
-        <h3>Daftar Kehadiran Semua Mahasiswa</h3>
+      <!-- Dosen -->
+      <div v-if="user.role === 'dosen'" class="card">
+        <h3>📊 Data Kehadiran Mahasiswa</h3>
         <table>
           <thead>
             <tr>
@@ -78,17 +80,14 @@
 </template>
 
 <script setup>
-import { reactive, ref, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 
-// State user login
 const user = ref(null)
-const loginRole = ref('')
 const loginName = ref('')
+const loginRole = ref('')
 
-// Absensi list
 const absensi = ref([])
 
-// Form absensi
 const absenForm = reactive({
   id: null,
   nama: '',
@@ -97,29 +96,25 @@ const absenForm = reactive({
 
 const isEdit = ref(false)
 
-// Login
 function login() {
   user.value = {
-    nama: loginName.value,
+    nama: loginName.value.trim(),
     role: loginRole.value
   }
+  absenForm.nama = user.value.nama
   loginName.value = ''
   loginRole.value = ''
 }
 
-// Logout
 function logout() {
   user.value = null
   resetForm()
 }
 
-// Tambah Absensi (Create)
 function submitAbsensi() {
   if (isEdit.value) {
-    const idx = absensi.value.findIndex((a) => a.id === absenForm.id)
-    if (idx !== -1) {
-      absensi.value[idx] = { ...absenForm }
-    }
+    const idx = absensi.value.findIndex(a => a.id === absenForm.id)
+    if (idx !== -1) absensi.value[idx] = { ...absenForm }
     isEdit.value = false
   } else {
     absensi.value.push({
@@ -131,7 +126,6 @@ function submitAbsensi() {
   resetForm()
 }
 
-// Edit Absensi
 function editAbsensi(a) {
   absenForm.id = a.id
   absenForm.nama = a.nama
@@ -139,64 +133,101 @@ function editAbsensi(a) {
   isEdit.value = true
 }
 
-// Delete Absensi
 function hapusAbsensi(id) {
-  absensi.value = absensi.value.filter((a) => a.id !== id)
+  absensi.value = absensi.value.filter(a => a.id !== id)
   resetForm()
 }
 
-// Batal Edit
 function cancelEdit() {
-  resetForm()
   isEdit.value = false
+  resetForm()
 }
 
-// Reset form
 function resetForm() {
   absenForm.id = null
-  absenForm.nama = user.value?.nama || ''
   absenForm.kehadiran = 'Hadir'
+  absenForm.nama = user.value?.nama || ''
 }
 
-// Filter absensi milik mahasiswa yang sedang login
 const absensiSaya = computed(() =>
-  absensi.value.filter((a) => a.nama === user.value?.nama)
+  absensi.value.filter(a => a.nama === user.value?.nama)
 )
 </script>
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
 .app {
-  max-width: 700px;
-  margin: auto;
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', sans-serif;
   padding: 1rem;
+  max-width: 800px;
+  margin: auto;
+  color: #222;
 }
-
+h2, h3 {
+  margin-top: 0;
+  color: #222;
+}
+.login-card, .card {
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  margin-top: 2rem;
+}
 form {
-  margin: 1rem 0;
   display: flex;
-  flex-wrap: wrap;
   gap: 0.5rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
 }
-
 input, select, button {
   padding: 0.5rem;
   font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #bbb;
+  color: #222;
 }
-
+button {
+  background-color: #1565c0;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+button:hover {
+  background-color: #0d47a1;
+}
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  background: #1976d2;
+  color: white;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
+  font-size: 0.95rem;
 }
-
 th, td {
   border: 1px solid #ccc;
-  padding: 0.5rem;
+  padding: 0.7rem;
   text-align: center;
 }
-
-button {
-  cursor: pointer;
+th {
+  background-color: #f1f1f1;
+  color: #222;
+}
+td {
+  background-color: #fff;
+  color: #222;
 }
 </style>
